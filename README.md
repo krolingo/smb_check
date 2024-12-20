@@ -1,6 +1,6 @@
 # smb_check
 
-A script to check if a macOS SMB service is running and if clients are able to connect successfully.
+A script to verify if the macOS SMB service is running and ensure that clients can connect successfully. The script uses doas, which I installed via MacPorts. However, since I also compiled it manually, MacPorts is optional if you prefer not to install it.
 
 ## Features
 
