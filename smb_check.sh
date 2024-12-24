@@ -23,6 +23,14 @@ UMOUNT="/sbin/umount"
 export PATH=/usr/local/opt/ruby/bin:/usr/local/sbin:/usr/local/bin:/opt/local/bin:/opt/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin
 export HOME=/private/tmp
 
+# Function to clean up the mount point directory
+cleanup() {
+    if [ -d "$MOUNT_POINT" ]; then
+        echo "Cleaning up mount point $MOUNT_POINT." | /opt/local/bin/doas $TEE -a "$LOGFILE" > /dev/null
+        /opt/local/bin/doas $RM -rf "$MOUNT_POINT" 2>>"$ERRORLOG"
+    fi
+}
+
 # Pre-create or reset log files with doas
 /opt/local/bin/doas $TOUCH "$LOGFILE" "$ERRORLOG" "$RESULTFILE"
 /opt/local/bin/doas $CHMOD 666 "$LOGFILE" "$ERRORLOG" "$RESULTFILE"
@@ -68,4 +76,7 @@ else
     echo "SMB Mount Failed: $SMB_SERVER" | /opt/local/bin/doas $TEE -a "$LOGFILE" > /dev/null
     echo 1  # Directly print to stdout
 fi
+
+# Clean up the mount point directory
+cleanup
 
