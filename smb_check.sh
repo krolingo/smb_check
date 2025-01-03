@@ -18,9 +18,20 @@ export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 exec 200>"$LOCKFILE"
 if ! flock -n 200; then
     echo "Another instance is running. Exiting." >> "$LOGFILE"
-    echo 1  # Zabbix needs this as the error code output
+    echo 1
     exit 1
 fi
+
+# Function to clear logs
+clear_logs() {
+    > "$LOGFILE"
+    > "$ERRORLOG"
+    > "$RESULTFILE"
+    echo "[$(date)] Logs cleared." >> "$LOGFILE"
+}
+
+# Clear logs at the start of the script
+clear_logs
 
 # Function to clean up the mount point directory
 cleanup() {
@@ -31,7 +42,7 @@ cleanup() {
     fi
     mkdir -p "$MOUNT_POINT" 2>>"$ERRORLOG" || {
         echo "Failed to recreate mount point. Exiting." >> "$LOGFILE"
-        echo 1  # Exit code for Zabbix
+        echo 1
         exit 1
     }
 }
@@ -40,7 +51,7 @@ cleanup() {
 log_and_exit() {
     local code=$1
     echo "Exiting with code $code" >> "$LOGFILE"
-    echo "$code"  # Output for Zabbix
+    echo "$code"
     exit "$code"
 }
 
