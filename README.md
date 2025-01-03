@@ -64,6 +64,12 @@ sudo -u zabbix /bin/bash /usr/local/share/zabbix/externalscripts/smb_check.sh
    - **Key**: `smb_check.sh`
 2. Set up a trigger to alert if the script fails (`value = 1`).
 
+#### Zabbix Agent Configuration
+Add the following line to `/usr/local/etc/zabbix/zabbix_agentd.conf`:
+```sh
+UserParameter=smb.check,/usr/local/share/zabbix/externalscripts/smb_check.sh
+```
+
 ### Logs
 - Execution logs: `/tmp/smb_test.log`
 - Error logs: `/tmp/smb_test_error.log`
@@ -88,9 +94,6 @@ sudo -u zabbix /bin/bash /usr/local/share/zabbix/externalscripts/smb_check.sh
 - Designed for environments where the Zabbix user has `sudo` access to specific commands.
 - Assumes `mount_smbfs` is available. Adjustments may be needed for other SMB clients.
 
-## Contributions
-
-Contributions, bug reports, and feature requests are welcome! Please open an issue or submit a pull request.
 
 ## License
 
