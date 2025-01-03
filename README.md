@@ -58,18 +58,6 @@ Run the script manually to verify functionality:
 sudo -u zabbix /bin/bash /usr/local/share/zabbix/externalscripts/smb_check.sh
 ```
 
-### Integration with Zabbix
-1. Create a Zabbix item:
-   - **Type**: External check
-   - **Key**: `smb_check.sh`
-2. Set up a trigger to alert if the script fails (`value = 1`).
-
-#### Zabbix Agent Configuration
-Add the following line to `/usr/local/etc/zabbix/zabbix_agentd.conf`:
-```sh
-UserParameter=smb.check,/usr/local/share/zabbix/externalscripts/smb_check.sh
-```
-
 ### Logs
 - Execution logs: `/tmp/smb_test.log`
 - Error logs: `/tmp/smb_test_error.log`
@@ -94,6 +82,32 @@ UserParameter=smb.check,/usr/local/share/zabbix/externalscripts/smb_check.sh
 - Designed for environments where the Zabbix user has `sudo` access to specific commands.
 - Assumes `mount_smbfs` is available. Adjustments may be needed for other SMB clients.
 
+
+### Integration with Zabbix
+1. Create a Zabbix item:
+   - **Type**: External check
+   - **Key**: `smb_check.sh`
+2. Set up a trigger to alert if the script fails (`value = 1`).
+
+#### Zabbix Agent Configuration
+Add the following line to `/usr/local/etc/zabbix/zabbix_agentd.conf`:
+```sh
+UserParameter=smb.check,/usr/local/share/zabbix/externalscripts/smb_check.sh
+```
+
+### Zabbix Integration Details
+
+#### Zabbix Item
+
+This item monitors the SMB service status. Below is a screenshot of its configuration:
+
+![Zabbix Item](assets/20241220_091845_item.png)
+
+#### Zabbix Trigger
+
+The trigger alerts when the SMB service is unavailable. Below is a screenshot of its configuration:
+
+![Zabbix Trigger](assets/20241220_091900_trigger.png)
 
 ## License
 
