@@ -7,7 +7,7 @@ This script mounts and unmounts the specified SMB share to ensure it is accessib
 
 - **SMB Share Monitoring**: Verifies if an SMB share can be successfully mounted and unmounted.
 - **Zabbix Integration**: Outputs status codes (`0` for success, `1` for failure) for integration with Zabbix items.
-- **Robust Error Handling**: Handles busy mount points, stale processes, and unexpected errors gracefully.
+- **Error Handling**: Handles busy mount points, stale processes, and unexpected errors gracefully.
 - **Logging**: Generates detailed logs for troubleshooting, including timestamps and descriptions of each step.
 - **Environment Standardization**: Ensures consistent execution, even in restricted environments like Zabbix.
 
