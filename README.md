@@ -1,89 +1,97 @@
-# smb_check
 
-A script to verify if the macOS SMB service is running and ensure that clients can connect successfully. <s>The script uses doas, which I installed via MacPorts. However, since I also compiled it manually, MacPorts is optional if you prefer not to install it.</s>
+# SMB Monitoring Script for Zabbix
+
+This script mounts and unmounts the specified SMB share to ensure it is accessible, reporting the status to Zabbix. It is tailored for integration with Zabbix monitoring systems and includes robust error handling, detailed logging, and a lock mechanism to prevent concurrent executions.
 
 ## Features
 
-- Checks the status of an SMB share by attempting to mount it on the system.
-- Returns `0` on success and `1` on failure.
+- **SMB Share Monitoring**: Verifies if an SMB share can be successfully mounted and unmounted.
+- **Zabbix Integration**: Outputs status codes (`0` for success, `1` for failure) for integration with Zabbix items.
+- **Robust Error Handling**: Handles busy mount points, stale processes, and unexpected errors gracefully.
+- **Logging**: Generates detailed logs for troubleshooting, including timestamps and descriptions of each step.
+- **Environment Standardization**: Ensures consistent execution, even in restricted environments like Zabbix.
+
+## Prerequisites
+
+- **Operating System**: Tested on macOS (should work on Unix-like systems with minor adjustments).
+- **Dependencies**:
+  - `sudo` or `doas` for privilege elevation.
+  - SMB client tools (`mount_smbfs`, `umount`).
+  - Standard utilities: `flock`, `mkdir`, `rm`, `lsof`, `fuser`.
 
 ## Configuration
 
-The script is configured with the following parameters:
-- **SMB server address**: The address of the SMB server.
-- **Share name**: The name of the SMB share to test.
-- **Mount point**: The directory where the share will be mounted.
-- **User credentials**: Credentials required to access the share.
+Update the following variables in the script to match your environment:
 
-Additional configuration includes:
-- **Log files**: Locations for logging actions and errors (e.g., `/private/tmp/smb_test.log`).
-- **Required commands**: Utilities like `mount_smbfs`, `umount`, and `doas`.
+- `SMB_SERVER`: The IP or hostname of the SMB server.
+- `SMB_SHARE`: The name of the SMB share.
+- `MOUNT_POINT`: Directory where the SMB share will be mounted.
+- `USERNAME` and `PASSWORD`: Credentials for accessing the SMB share.
 
-### Zabbix Integration
-
-#### Script Location
-Place the script at:
-```
-/usr/local/share/zabbix/externalscripts/smb_check.sh
+Example:
+```bash
+SMB_SERVER="192.168.1.100"
+SMB_SHARE="Bucket"
+MOUNT_POINT="/private/tmp/testshare"
+USERNAME="samba_checker_user"
+PASSWORD="your_password_here"
 ```
 
-#### Zabbix Agent Configuration
-Add the following line to `/usr/local/etc/zabbix/zabbix_agentd.conf`:
-```sh
-UserParameter=smb.check,/usr/local/share/zabbix/externalscripts/smb_check.sh
+## Installation
+
+1. Copy the script to your Zabbix external scripts directory (e.g., `/usr/local/share/zabbix/externalscripts/`).
+2. Ensure the script is executable:
+   ```bash
+   chmod +x /usr/local/share/zabbix/externalscripts/smb_check.sh
+   ```
+3. Configure `sudo` permissions for the Zabbix user:
+   - Edit `/etc/sudoers.d/zabbix`:
+     ```plaintext
+     zabbix ALL=(ALL) NOPASSWD: /sbin/mount_smbfs, /sbin/umount, /bin/rm, /bin/mkdir, /usr/bin/lsof, /usr/bin/fuser
+     ```
+
+## Usage
+
+### Manual Execution
+Run the script manually to verify functionality:
+```bash
+sudo -u zabbix /bin/bash /usr/local/share/zabbix/externalscripts/smb_check.sh
 ```
 
-### Log Files and Permissions
+### Integration with Zabbix
+1. Create a Zabbix item:
+   - **Type**: External check
+   - **Key**: `smb_check.sh`
+2. Set up a trigger to alert if the script fails (`value = 1`).
 
-- Actions and errors are logged in `/private/tmp/smb_test.log` for debugging.
-- The `doas` command ensures the script has necessary permissions for operations like:
-  - Creating directories
-  - Mounting/unmounting shares
-  - Writing to log files
+### Logs
+- Execution logs: `/tmp/smb_test.log`
+- Error logs: `/tmp/smb_test_error.log`
 
-### Mounting and Unmounting SMB Shares
+### Script Behavior
 
-- **Mount Check**: Uses the `mount_smbfs` command to attempt to mount the SMB share. On success, it prints `0`.
-- **Failure Handling**: If the mount fails (e.g., connectivity issues, invalid credentials), it prints `1`.
+1. Ensures no concurrent executions using a `flock`-based lock file.
+2. Cleans up stale mount points and creates the mount directory if necessary.
+3. Attempts to mount the SMB share.
+4. Verifies the mount operation and logs success or failure.
+5. Unmounts the share and cleans up the mount point.
 
-### File System Cleanup
+## Troubleshooting
 
-- If the mount point is already in use, the script unmounts it before proceeding.
-- Ensures the mount point directory is empty before attempting to mount the share.
+- If the script fails to execute:
+  - Check the logs in `/tmp/smb_test.log` and `/tmp/smb_test_error.log`.
+  - Ensure the Zabbix user has the required `sudo` permissions.
+  - Test individual commands (e.g., `sudo mount_smbfs`) manually.
 
-## doas Permissions
+## Limitations
 
-The script requires the following `doas` configuration in `/opt/local/etc/doas.conf`:
+- Designed for environments where the Zabbix user has `sudo` access to specific commands.
+- Assumes `mount_smbfs` is available. Adjustments may be needed for other SMB clients.
 
-```sh
-# Explicit rules for Zabbix
-permit nopass keepenv zabbix as root cmd /usr/bin/touch
-permit nopass keepenv zabbix as root cmd /bin/chmod
-permit nopass keepenv zabbix as root cmd /usr/bin/tee
-permit nopass keepenv zabbix as root cmd /bin/mkdir
-permit nopass keepenv zabbix as root cmd /bin/rm
-permit nopass keepenv zabbix as root cmd /sbin/mount_smbfs
-permit nopass keepenv zabbix as root cmd /sbin/umount
-```
+## Contributions
 
-## Zabbix Integration Details
+Contributions, bug reports, and feature requests are welcome! Please open an issue or submit a pull request.
 
-### Zabbix Item
+## License
 
-This item monitors the SMB service status. Below is a screenshot of its configuration:
-
-![Zabbix Item](assets/20241220_091845_item.png)
-
-### Zabbix Trigger
-
-The trigger alerts when the SMB service is unavailable. Below is a screenshot of its configuration:
-
-![Zabbix Trigger](assets/20241220_091900_trigger.png)
-
----
-
-### Example Output
-
-When the script is executed:
-- **Success**: Returns `0`
-- **Failure**: Returns `1`
+This script is licensed under the MIT License.
